@@ -109,7 +109,8 @@ oc wait --for condition=Ready -n istio-system smmr/default --timeout 300s
 # Install Argo Rollouts
 ##
 oc new-project argo-rollouts
-kubectl apply -n argo-rollouts -f ./scripts/files/argo-rollouts-install.yaml
+oc apply -n argo-rollouts -f ./scripts/files/argo-rollouts-controller.yaml
+oc apply -n argo-rollouts -f ./scripts/files/argo-rollouts-rbac.yaml
 
 ## 
 # Install Web Terminal
