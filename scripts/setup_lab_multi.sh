@@ -10,35 +10,35 @@ user02
 user03
 "
 
-##
-# Adding user to htpasswd
-##
-htpasswd -c -b users.htpasswd admin password
-for i in $USERS
-do
-  htpasswd -b users.htpasswd $i $i
-done
+# ##
+# # Adding user to htpasswd
+# ##
+# htpasswd -c -b users.htpasswd admin password
+# for i in $USERS
+# do
+#   htpasswd -b users.htpasswd $i $i
+# done
 
-##
-# Creating htpasswd file in Openshift
-##
-oc delete secret lab-users -n openshift-config
-oc create secret generic lab-users --from-file=htpasswd=users.htpasswd -n openshift-config
+# ##
+# # Creating htpasswd file in Openshift
+# ##
+# oc delete secret lab-users -n openshift-config
+# oc create secret generic lab-users --from-file=htpasswd=users.htpasswd -n openshift-config
 
-##
-# Configuring OAuth to authenticate users via htpasswd
-##
-oc apply -f ./scripts/files/oauth.yaml
+# ##
+# # Configuring OAuth to authenticate users via htpasswd
+# ##
+# oc apply -f ./scripts/files/oauth.yaml
 
-##
-# Disable self namespaces provisioner 
-##
-oc patch clusterrolebinding.rbac self-provisioners -p '{"subjects": null}'
+# ##
+# # Disable self namespaces provisioner 
+# ##
+# oc patch clusterrolebinding.rbac self-provisioners -p '{"subjects": null}'
 
-##
-# Creating Role Binding for admin user
-##
-oc adm policy add-cluster-role-to-user admin admin
+# ##
+# # Creating Role Binding for admin user
+# ##
+# oc adm policy add-cluster-role-to-user admin admin
 
 ##
 # Libraries
@@ -106,13 +106,6 @@ echo "Waiting for Istio control plane is ready..."
 oc wait --for condition=Ready -n istio-system smmr/default --timeout 300s
 
 ## 
-# Install Argo Rollouts
-##
-oc new-project argo-rollouts
-oc apply -n argo-rollouts -f ./scripts/files/argo-rollouts-controller.yaml
-oc apply -n argo-rollouts -f ./scripts/files/argo-rollouts-rbac.yaml
-
-## 
 # Install Web Terminal
 ##
 oc apply -f scripts/files/webterminal/dev-workspaces-operator.yaml
@@ -133,11 +126,14 @@ do
   oc label namespace $i-blue-green argocd.argoproj.io/managed-by=$i-gitops-argocd --overwrite
   oc adm policy add-role-to-user admin $i -n $i-blue-green
   oc adm policy add-role-to-user admin system:serviceaccount:$i-gitops-argocd:argocd-argocd-application-controller -n $i-blue-green
+  oc apply -n $i-blue-green -f ./scripts/files/argo-rollouts-controller.yaml
+
   
   oc new-project $i-canary
   oc label namespace $i-canary argocd.argoproj.io/managed-by=$i-gitops-argocd --overwrite
   oc adm policy add-role-to-user admin $i -n $i-canary
   oc adm policy add-role-to-user admin system:serviceaccount:$i-gitops-argocd:argocd-argocd-application-controller -n $i-canary
+  oc apply -n $i-canary -f ./scripts/files/argo-rollouts-controller.yaml
   
   oc new-project $i-canary-service-mesh
   oc label namespace $i-canary-service-mesh argocd.argoproj.io/managed-by=$i-gitops-argocd --overwrite
@@ -145,12 +141,12 @@ do
   oc adm policy add-role-to-user admin system:serviceaccount:$i-gitops-argocd:argocd-argocd-application-controller -n $i-canary-service-mesh
   oc adm policy add-role-to-user admin system:serviceaccount:$i-gitops-argocd:argocd-argocd-application-controller -n istio-system
   oc apply -f scripts/files/mesh_smm.yaml -n $i-canary-service-mesh
+  oc apply -n $i-canary-service-mesh -f ./scripts/files/argo-rollouts-controller.yaml
 
   oc new-project $i-gitops-argocd
   oc label namespace $i-gitops-argocd argocd.argoproj.io/managed-by=$i-gitops-argocd --overwrite
   oc adm policy add-role-to-user admin $i -n $i-gitops-argocd
   oc adm policy add-role-to-user admin system:serviceaccount:$i-gitops-argocd:argocd-argocd-application-controller -n $i-gitops-argocd
-
   ## 
   # Install ArgoCD per user
   ##
